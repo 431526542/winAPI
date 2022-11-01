@@ -10,6 +10,7 @@
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
+HWND g_hWnd; //()메인 윈도우 핸들
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -46,7 +47,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,         //실행된 프로세스
 
     MSG msg;
 
+    //()강제로 타임 셋을 시키는 방법
+    //SetTimer(g_hWnd, 10, 0, nullptr);
+
     // 기본 메시지 루프입니다:
+    /*
     while (GetMessage(&msg, nullptr, 0, 0)) //GetMessage는 해당프로그램쪽으로 발생한 메시지들을 메시지 큐에 받아놔서 그걸 꺼내보는것
         //GetMessage 특징
         //메시지 큐에서 메시지 확인 할 때 까지 대기
@@ -57,7 +62,44 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,         //실행된 프로세스
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+    }*/
+    //KillTimer(g_hWnd, 10);
+    //()변경한 메시지 루프
+    //비교시간체크
+    DWORD dwPrevCount = GetTickCount();
+    int iMsgCheck = 0;
+    int iNoneMsgCheck = 0;
+    while (true) 
+    {
+        //PeekMessage
+        //메세지 유무와 관계없이 반환
+        //메시지큐에서 메시지를 확인한 경우 true, 메시지큐에 메시지가 없는 경우 false로 반환
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))//슬적본다(&msg, nullptr, 0, 0,자기가 확인한 메시지가 있는 경우 메시지 큐에서 제거(없으면 메시지 큐에 계속 존재)
+                                                     //메시지의 유무로 ture false 반환
+        {
+            //메시지 처리하기전
+            if (WM_QUIT == msg.message)
+                break;
+
+            if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            ++iMsgCheck;
+        }
+        else
+        {
+            //메시지가 없는 동안 호출
+            ++iNoneMsgCheck;
+            DWORD dwCurCount = GetTickCount();
+            if (dwCurCount - iNoneMsgCheck > 1000)
+            {
+                int a = 0;
+            }
+        }
     }
+    
 
     return (int) msg.wParam;
 }
@@ -104,16 +146,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle/*창이름*/, WS_OVERLAPPEDWINDOW, //HWND는 CreateWindowW에서 ID를 받고 다룰수 있게 된다.
+   g_hWnd = CreateWindowW(szWindowClass, szTitle/*창이름*/, WS_OVERLAPPEDWINDOW, //HWND는 CreateWindowW에서 ID를 받고 다룰수 있게 된다.
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
-   if (!hWnd)
+   if (!g_hWnd)
    {
       return FALSE;
    }
 
-   ShowWindow(hWnd, nCmdShow);                                                      //아이디 값을 받아서 ShowWindow하게 된다.
-   UpdateWindow(hWnd);
+   ShowWindow(g_hWnd, nCmdShow);                                                      //아이디 값을 받아서 ShowWindow하게 된다.
+   UpdateWindow(g_hWnd);
 
    return TRUE;
 }
@@ -155,7 +197,7 @@ POINT g_ptRB;
 bool bLbtnDown = false;
 
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)//wParam,lParam은 해당 message의 부가 인자값
+LRESULT CALLBACK WndProc(HWND g_hWnd, UINT message, WPARAM wParam, LPARAM lParam)//wParam,lParam은 해당 message의 부가 인자값
 {
     switch (message)
     {
@@ -166,20 +208,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)/
             switch (wmId)
             {
             case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), g_hWnd, About);
                 break;
             case IDM_EXIT:
-                DestroyWindow(hWnd);
+                DestroyWindow(g_hWnd);
                 break;
             default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
+                return DefWindowProc(g_hWnd, message, wParam, lParam);
             }
         }
         break;
     case WM_PAINT: //window에 무효화 영역이 발생한 경우 발생 : 판정) 창을 줄였다 켜진경우
         {
             PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps); //Device Context : 그리기 , hWnd : window이다.
+            HDC hdc = BeginPaint(g_hWnd, &ps); //Device Context : 그리기 , hWnd : window이다.
             //BeginPaint : Device Context하나를 만들어서 ID를 반환해주는 함수
              /*
             struct __HDC
@@ -238,7 +280,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)/
             DeleteObject(hBluebrush);
 
             //그리기 종료
-            EndPaint(hWnd, &ps);
+            EndPaint(g_hWnd, &ps);
         }
         break;
 
@@ -249,19 +291,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)/
         {
         case VK_UP:
             //g_ptObjPos.y -= 10;
-            InvalidateRect(hWnd, nullptr, true); //무효화영역을 직접 설정
+            InvalidateRect(g_hWnd, nullptr, true); //무효화영역을 직접 설정
             break;
         case VK_DOWN:
             //g_ptObjPos.y += 10;
-            InvalidateRect(hWnd, nullptr, true); //무효화영역을 직접 설정
+            InvalidateRect(g_hWnd, nullptr, true); //무효화영역을 직접 설정
             break;
         case VK_LEFT:
             //g_ptObjPos.x -= 10;
-            InvalidateRect(hWnd, nullptr, true); //무효화영역을 직접 설정
+            InvalidateRect(g_hWnd, nullptr, true); //무효화영역을 직접 설정
             break;
         case VK_RIGHT:
             //g_ptObjPos.x += 10;
-            InvalidateRect(hWnd, nullptr, true); //무효화영역을 직접 설정
+            InvalidateRect(g_hWnd, nullptr, true); //무효화영역을 직접 설정
             break;
         }
     }
@@ -280,7 +322,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)/
     {
         g_ptRB.x = LOWORD(lParam);
         g_ptRB.y = HIWORD(lParam);
-        InvalidateRect(hWnd, nullptr, true);
+        InvalidateRect(g_hWnd, nullptr, true);
     }
         break;
 
@@ -295,7 +337,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)/
 
         g_vecInfo.push_back(info);
         bLbtnDown = false;
-        InvalidateRect(hWnd, nullptr, true);
+        InvalidateRect(g_hWnd, nullptr, true);
+    }
+        break;
+
+    case WM_TIMER:
+    {
+        int a = 0;
     }
         break;
 
@@ -303,7 +351,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)/
         PostQuitMessage(0);
         break;
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        return DefWindowProc(g_hWnd, message, wParam, lParam);
     }
     return 0;
 }
