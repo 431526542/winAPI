@@ -1,8 +1,11 @@
 ﻿// Client.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
 
+#include "pch.h"
 #include "framework.h"
 #include "Client.h"
+
+#include "CCore.h"
 
 #define MAX_LOADSTRING 100
 
@@ -42,6 +45,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,         //실행된 프로세스
         return FALSE;
     }
 
+    //()Core 초기화
+    if (FAILED(CCore::GetInst()->init(g_hWnd, POINT{1280, 768})))
+    {
+        MessageBox(nullptr, L"Core 객체 초기화 실패", L"ERROR", MB_OK);
+        return FALSE;
+    }
+    
+
+
+
+
+
+
+
     //단축키 관련 정보
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CLIENT));
 
@@ -49,7 +66,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,         //실행된 프로세스
 
     //()강제로 타임 셋을 시키는 방법
     //SetTimer(g_hWnd, 10, 0, nullptr);
-
     // 기본 메시지 루프입니다:
     /*
     while (GetMessage(&msg, nullptr, 0, 0)) //GetMessage는 해당프로그램쪽으로 발생한 메시지들을 메시지 큐에 받아놔서 그걸 꺼내보는것
@@ -66,14 +82,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,         //실행된 프로세스
     //KillTimer(g_hWnd, 10);
     //()변경한 메시지 루프
     //비교시간체크
+    /*
     DWORD dwPrevCount = GetTickCount();
-    int iMsgCheck = 0;
-    int iNoneMsgCheck = 0;
+    DWORD dwAccCount = 0;*/
     while (true) 
     {
+        /*
+        int iTime = GetTickCount();
         //PeekMessage
         //메세지 유무와 관계없이 반환
-        //메시지큐에서 메시지를 확인한 경우 true, 메시지큐에 메시지가 없는 경우 false로 반환
+        //메시지큐에서 메시지를 확인한 경우 true, 메시지큐에 메시지가 없는 경우 false로 반환*/
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))//슬적본다(&msg, nullptr, 0, 0,자기가 확인한 메시지가 있는 경우 메시지 큐에서 제거(없으면 메시지 큐에 계속 존재)
                                                      //메시지의 유무로 ture false 반환
         {
@@ -86,17 +104,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,         //실행된 프로세스
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
-            ++iMsgCheck;
+            /*
+            int iAdd = (GetTickCount() - iTime);
+            dwAccCount += iAdd;*/
         }
+        //메시지가 발생하지 않는 대부분의 시간
         else
         {
-            //메시지가 없는 동안 호출
-            ++iNoneMsgCheck;
+            /*
             DWORD dwCurCount = GetTickCount();
-            if (dwCurCount - iNoneMsgCheck > 1000)
+            if (dwCurCount - dwPrevCount > 1000)
             {
-                int a = 0;
+                float fRatio = (float)dwAccCount / 1000.f;
+
+                wchar_t szBuff[50] = {};
+                swprintf_s(szBuff, L"비율 : %f", fRatio);
+                SetWindowText(g_hWnd, szBuff);
             }
+
+            dwPrevCount = dwCurCount;
+            dwAccCount = 0;*/
+            //여기에 game 코드 수행
+            //디자인 패턴 = 설계유형
+            //절대 모를수 없는 패턴 - 싱글톤 패턴
+            CCore::GetInst()->progress();
+
         }
     }
     
@@ -175,6 +207,7 @@ int g_x = 0;
 int g_y = 0;
 */
 
+/*
 #include <vector>
 
 using std::vector;
@@ -194,7 +227,7 @@ POINT g_ptLT;
 //우하단에 기억
 POINT g_ptRB;
 //마우스 왼쪽버튼 bool
-bool bLbtnDown = false;
+bool bLbtnDown = false;*/
 
 
 LRESULT CALLBACK WndProc(HWND g_hWnd, UINT message, WPARAM wParam, LPARAM lParam)//wParam,lParam은 해당 message의 부가 인자값
@@ -232,7 +265,7 @@ LRESULT CALLBACK WndProc(HWND g_hWnd, UINT message, WPARAM wParam, LPARAM lParam
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
             // 
             //즉. HDC는 Device Context의 ID를 받는 자료형이다.
-            
+            /*
             //DC의 목적지는 hWnd
             //DC의 펜은 기본팬(Black)
             //DC의 브러쉬는 기본 브러쉬(white)
@@ -257,10 +290,13 @@ LRESULT CALLBACK WndProc(HWND g_hWnd, UINT message, WPARAM wParam, LPARAM lParam
                 , g_ptObjPos.x + g_ptObjScale.x / 2
                 , g_ptObjPos.y + g_ptObjScale.y / 2);*/
             //왼쪽 마우스 버튼을 눌렀을때 사각형 그리기
+            /*
             if (bLbtnDown)
             {
                 Rectangle(hdc, g_ptLT.x, g_ptLT.y, g_ptRB.x, g_ptRB.y);
-            }
+            }*/
+            //Rectangle(hdc, 1180, 668, 1280, 768);
+            /*
             //vector안에 추가된 사각형 그리기
             for (size_t i = 0; i < g_vecInfo.size(); ++i)
             {
@@ -277,7 +313,7 @@ LRESULT CALLBACK WndProc(HWND g_hWnd, UINT message, WPARAM wParam, LPARAM lParam
             SelectObject(hdc, hDefaultBrush);
             //만든펜,브러쉬 지우기
             DeleteObject(hRedPen);
-            DeleteObject(hBluebrush);
+            DeleteObject(hBluebrush);*/
 
             //그리기 종료
             EndPaint(g_hWnd, &ps);
@@ -287,6 +323,7 @@ LRESULT CALLBACK WndProc(HWND g_hWnd, UINT message, WPARAM wParam, LPARAM lParam
     //키보드의 키가 눌리면 발생하는 함수
     case WM_KEYDOWN: //WM_KEYDOWN한번 눌린후 그다음 계속들어옴
     {
+        /*
         switch (wParam)
         {
         case VK_UP:
@@ -305,29 +342,32 @@ LRESULT CALLBACK WndProc(HWND g_hWnd, UINT message, WPARAM wParam, LPARAM lParam
             //g_ptObjPos.x += 10;
             InvalidateRect(g_hWnd, nullptr, true); //무효화영역을 직접 설정
             break;
-        }
+        }*/
     }
         break;
 
     //마우스 왼쪽 클릭 눌렀을 때
     case WM_LBUTTONDOWN:  //lParam = 마우스 좌표
     {
+        /*
         g_ptLT.x = LOWORD(lParam); //마우스 x좌표
         g_ptLT.y = HIWORD(lParam); //마우스 y좌표
-        bLbtnDown = true;
+        bLbtnDown = true;*/
     }
         break;
 
     case WM_MOUSEMOVE: //마우스가 이동할때 발생하는 이벤트
     {
+        /*
         g_ptRB.x = LOWORD(lParam);
         g_ptRB.y = HIWORD(lParam);
-        InvalidateRect(g_hWnd, nullptr, true);
+        //InvalidateRect(g_hWnd, nullptr, true);*/
     }
         break;
-
+    
     case WM_LBUTTONUP:
     {
+        /*
         tOpjInfo info = {};
         info.g_ptObjPos.x = (g_ptLT.x + g_ptRB.x) / 2;
         info.g_ptObjPos.y = (g_ptLT.y + g_ptRB.y) / 2;
@@ -337,15 +377,15 @@ LRESULT CALLBACK WndProc(HWND g_hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
         g_vecInfo.push_back(info);
         bLbtnDown = false;
-        InvalidateRect(g_hWnd, nullptr, true);
+        InvalidateRect(g_hWnd, nullptr, true);*/
     }
         break;
-
+    /*
     case WM_TIMER:
     {
         int a = 0;
     }
-        break;
+        break;*/
 
     case WM_DESTROY:
         PostQuitMessage(0);
