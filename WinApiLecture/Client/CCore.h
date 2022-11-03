@@ -51,6 +51,10 @@ private:
 	POINT m_ptResolution; //메인 윈도우 해상도
 	HDC m_hDC; //메인 윈도우에 Draw할 DC
 
+	//이중버퍼링
+	HBITMAP m_hBit;
+	HDC m_memDC;
+
 public:
 	int init(HWND _hwnd, POINT _ptResolution);
 	void progress();
@@ -59,8 +63,7 @@ private:
 	void update();
 	void render();
 
-private:
-	CCore();
-	~CCore();
+public:
+	HWND GetMainHwnd() { return m_hWnd; }
 
 };
